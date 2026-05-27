@@ -1,178 +1,197 @@
-# Projeto de Big Data - Deteccao de Fraudes na Rede Eletrica
+# Metodologias - 5 Semestre
 
-Este projeto apresenta uma solucao de Big Data Analytics para ajudar concessionarias de energia eletrica a identificar possiveis fraudes e furtos de energia, tambem conhecidos como Perdas Nao Tecnicas (PNT).
+Este repositorio resume as metodologias usadas no projeto de Big Data apresentado na documentacao.
 
-A ideia principal e simples: em vez de mandar equipes de fiscalizacao para lugares aleatorios, o projeto usa dados, processamento em larga escala e Machine Learning para apontar quais unidades consumidoras ou regioes possuem maior risco de irregularidade.
+O trabalho tem como contexto a deteccao de Perdas Nao Tecnicas (PNT) no setor eletrico, causadas por furtos e fraudes de energia. Para organizar o projeto, foram aplicadas metodologias voltadas para negocio, engenharia de dados, ciencia de dados, gestao agil e operacao de pipelines.
 
-## Problema
+As metodologias abordadas sao:
 
-O setor eletrico sofre com perdas causadas por ligacoes clandestinas, adulteracao de medidores e outros tipos de fraude. Essas perdas geram prejuizo financeiro para as distribuidoras, aumentam custos para consumidores regulares e ainda podem comprometer a qualidade e a seguranca da rede.
+- CRISP-DM
+- KDD
+- Scrum / Kanban
+- DataOps
 
-O grande desafio e que esse problema acontece em larga escala. Uma distribuidora pode ter milhoes de registros de consumo, interrupcoes, faturamento, clima e localizacao. Analisar tudo isso manualmente seria lento, caro e pouco eficiente.
+## CRISP-DM
 
-Por isso, a pergunta central do projeto e:
+O CRISP-DM foi usado para garantir o alinhamento entre os objetivos de negocio e a execucao tecnica do projeto.
 
-> Como identificar padroes de consumo irregular em larga escala para aumentar a assertividade das inspecoes e reduzir perdas comerciais?
+No documento, ele aparece dividido em seis fases ciclicas:
 
-## Objetivo
+### 1. Business Understanding
 
-O objetivo do trabalho e construir uma proposta de arquitetura de dados capaz de:
+Nesta fase foi definido o objetivo principal do projeto: reduzir as Perdas Nao Tecnicas causadas por furtos e fraudes de energia em larga escala.
 
-- coletar dados oficiais e operacionais sobre perdas e interrupcoes;
-- organizar esses dados em uma estrutura confiavel;
-- tratar inconsistencias, valores nulos e registros duplicados;
-- identificar comportamentos fora do padrao;
-- gerar um score de risco para apoiar a fiscalizacao;
-- apresentar os resultados em dashboards para tomada de decisao.
+O foco foi identificar comportamentos irregulares de consumo para aumentar a assertividade das equipes de fiscalizacao em campo. Com isso, a eficiencia operacional pode ser transformada em recuperacao de receita.
 
-## Bases de dados
+### 2. Data Understanding
 
-O projeto utiliza como referencia dados publicos e oficiais da ANEEL, alem de dados complementares que podem ser integrados ou simulados para enriquecer a analise.
+Aqui ocorreu a exploracao inicial das bases oficiais da ANEEL e dos dados historicos de faturamento.
 
-As principais fontes consideradas sao:
+Durante essa analise, o histograma de distribuicao de frequencia mostrou a presenca de outliers extremos, com cauda longa a direita. Esse comportamento justificou o uso de abordagens focadas em deteccao de anomalias.
 
-- Relatorios de Perdas de Energia Eletrica da ANEEL;
-- dados de interrupcoes nas redes de distribuicao;
-- indicadores de continuidade e desempenho das distribuidoras;
-- historico de consumo e faturamento;
-- dados de medidores inteligentes;
-- variaveis climaticas e socioeconomicas por regiao.
+### 3. Data Preparation
 
-Essas fontes ajudam a cruzar o comportamento de consumo com falhas na rede, contexto regional e historico de perdas.
+Nesta fase foi consolidado o pipeline usando a arquitetura Medallion dentro do Databricks.
 
-## Como o pipeline funciona
+Os dados brutos de interrupcoes e perdas passam por limpeza, padronizacao e enriquecimento com variaveis geograficas e climaticas. A camada Bronze guarda os dados brutos, enquanto a camada Silver trata os dados para remover ruidos e valores nulos.
 
-O pipeline foi pensado usando uma arquitetura Lakehouse no Databricks, seguindo o modelo Medallion. Esse modelo separa os dados em camadas, o que facilita a organizacao e melhora a confiabilidade do processo.
+### 4. Modeling
 
-### Camada Bronze
+Na etapa de modelagem, o documento apresenta o uso de algoritmos de Machine Learning nao supervisionados no Databricks, como Isolation Forests ou tecnicas de Clustering.
 
-Na camada Bronze ficam os dados brutos. Aqui os arquivos sao armazenados praticamente como chegaram da fonte original, por exemplo em CSV convertido para Delta.
+O modelo calcula um score de risco para cada unidade consumidora, considerando a distancia entre o padrao de consumo observado e o comportamento esperado para a regiao.
 
-Essa etapa e importante porque preserva o historico original e permite reprocessar os dados caso alguma regra de negocio mude depois.
+### 5. Evaluation
 
-### Camada Silver
+A avaliacao valida estatisticamente os alertas de anomalia gerados pelo modelo.
 
-Na camada Silver os dados passam por limpeza e padronizacao.
+Os resultados sao comparados com bases historicas de inspecoes passadas e fraudes reais ja confirmadas. O objetivo e medir precision e recall, evitando uma quantidade excessiva de falsos positivos.
 
-Nesta fase entram tarefas como:
+### 6. Deployment
 
-- remocao de registros duplicados;
-- tratamento de valores nulos;
-- padronizacao de campos;
-- cruzamento entre bases diferentes;
-- normalizacao por variaveis climaticas;
-- calculo da variacao mensal de consumo.
+Na implantacao, as tabelas refinadas da camada Gold do Databricks alimentam dashboards operacionais e sistemas de ordem de servico.
 
-Essa camada transforma dados baguncados em dados confiaveis para analise.
+Com isso, o modelo passa a direcionar os fiscais aos alvos com maior probabilidade de irregularidade.
 
-### Camada Gold
+## KDD
 
-Na camada Gold ficam os dados prontos para gerar valor para o negocio.
+Enquanto o CRISP-DM organiza o ciclo de vida de negocio do projeto, o KDD foi aplicado para orientar as etapas tecnicas de engenharia e extracao de conhecimento a partir dos dados consolidados no Databricks.
 
-E aqui que entram os indicadores finais, os scores de risco e os resultados do modelo de Machine Learning. Esses dados podem alimentar dashboards, relatorios e sistemas de ordem de servico.
+### Selecao
 
-## Analise e Machine Learning
+Nesta etapa foram identificadas e isoladas as variaveis criticas para o modelo de fraude.
 
-Durante a analise exploratoria, o projeto identificou que as perdas nao seguem uma distribuicao normal. A maior parte dos casos fica em faixas menores, mas existem alguns pontos muito extremos, formando uma cauda longa.
+O documento cita atributos como:
 
-Em termos simples: poucas regioes ou unidades podem concentrar perdas muito altas.
+- historico de consumo faturado;
+- registros de interrupcoes de energia;
+- coordenadas geograficas dos medidores;
+- dados de temperatura media por regiao.
 
-Esse comportamento justifica o uso de tecnicas de deteccao de anomalias. O algoritmo sugerido no trabalho e o Isolation Forest, que ajuda a encontrar registros com comportamento muito diferente do esperado.
+### Pre-processamento
 
-O modelo gera um score de risco para indicar quais consumidores ou regioes devem receber mais atencao das equipes de fiscalizacao.
+O pre-processamento envolve a ingestao e persistencia das fontes de dados estruturadas e de streaming diretamente na camada Bronze do Databricks.
 
-## Visualizacao dos resultados
+Essa camada funciona como armazenamento bruto dos dados em seu formato original. A ideia e garantir a integridade do historico e a linhagem dos dados antes de qualquer modificacao tecnica.
 
-Os resultados do processamento e da modelagem sao pensados para serem exibidos em dashboards no Power BI.
+### Transformacao
 
-Esses dashboards podem mostrar:
+A transformacao acontece na transicao e consolidacao da camada Silver.
 
-- mapas de calor de regioes com maior risco;
-- indicadores de perdas por distribuidora ou localidade;
-- ranking de unidades com maior score de anomalia;
-- comparacao entre perdas, interrupcoes e consumo;
-- metricas de acompanhamento do modelo.
+Aqui os dados brutos da Bronze passam por limpeza profunda, tratamento de valores nulos e duplicados, filtragem de ruidos operacionais e normalizacao em relacao as variaveis climaticas.
 
-Assim, a area de negocio consegue entender os dados sem precisar olhar diretamente para codigo ou tabelas tecnicas.
+Tambem e feito o calculo do desvio padrao do consumo mensal para preparar o dataset final.
 
-## Metodologias usadas
+### Data Mining
 
-O projeto combina metodologias de negocio, ciencia de dados, engenharia de dados e gestao agil.
+Na fase de Data Mining sao aplicados algoritmos de Machine Learning, como Isolation Forest ou modelos baseados em agrupamento e densidade.
 
-### CRISP-DM
+Esses algoritmos sao processados de forma distribuida nos clusters Spark do Databricks. O objetivo e varrer a base transformada para destacar perfis com comportamento estatisticamente fora do padrao e com alto risco de fraude.
 
-O CRISP-DM guia o ciclo de vida do projeto de dados:
+### Interpretacao
 
-1. entendimento do negocio;
-2. entendimento dos dados;
-3. preparacao dos dados;
-4. modelagem;
-5. avaliacao;
-6. implantacao.
+Na interpretacao, os padroes descobertos pelo algoritmo sao analisados pela otica do negocio.
 
-No projeto, ele ajuda a garantir que a solucao tecnica esteja conectada ao problema real da distribuidora: reduzir perdas e melhorar a fiscalizacao.
+Os outliers de cauda longa mapeados no histograma sao avaliados para verificar se a anomalia tecnica corresponde a uma perda comercial causada por furto. Os resultados sao refinados para melhorar o direcionamento das inspecoes.
 
-### KDD
+## Scrum / Kanban
 
-O KDD orienta a parte mais tecnica de descoberta de conhecimento nos dados.
+Scrum e Kanban foram usados para organizar a gestao agil do projeto.
 
-Ele aparece principalmente nas etapas de selecao das variaveis, pre-processamento, transformacao, mineracao de dados e interpretacao dos resultados encontrados.
+## Scrum
 
-### Scrum e Kanban
+No Scrum, a equipe organizou as frentes de trabalho, os papeis e o planejamento das entregas.
 
-Scrum e Kanban foram usados para organizar o trabalho do grupo.
+### Backlog
 
-O Scrum ajuda na divisao de papeis, backlog e sprints. Ja o Kanban ajuda a visualizar o andamento das tarefas em colunas como "A fazer", "Fazendo" e "Concluido".
+O backlog do projeto inclui:
 
-### DataOps
+- mapeamento das bases de dados da ANEEL;
+- configuracao do ambiente e dos clusters no Databricks;
+- desenvolvimento do pipeline de limpeza e normalizacao dos dados nas camadas Bronze e Silver;
+- criacao do algoritmo de deteccao de anomalias com Isolation Forest;
+- construcao do dashboard de visualizacao no Power BI.
 
-DataOps entra para dar mais confiabilidade ao pipeline de dados.
+### Sprint 1
 
-A proposta e automatizar execucoes, acompanhar logs, monitorar qualidade dos dados e garantir que o processo seja repetivel, organizado e facil de manter.
+A primeira sprint contempla:
 
-## Tecnologias
+- ingestao dos dados brutos e estruturacao do armazenamento bruto na camada Bronze do Databricks;
+- tratamento de valores nulos e normalizacao climatica na camada Silver via PySpark;
+- extracao do histograma de distribuicao de frequencia das perdas reais para identificacao de outliers.
 
-As principais tecnologias e ferramentas consideradas no projeto sao:
+### Papeis
 
-- Python;
-- PySpark;
-- Apache Spark;
-- Databricks;
-- Delta Lake;
-- Power BI;
-- Machine Learning;
-- Isolation Forest;
-- arquitetura Lakehouse;
-- modelo Medallion.
+O Product Owner do projeto e Breno Cunha Michilizzi, responsavel por definir as regras de negocio para identificacao de irregularidades e priorizar o backlog com foco no retorno financeiro.
 
-## Estrutura do repositorio
+O Scrum Master e Bruno Ramos, responsavel por garantir a aplicacao das praticas ageis e remover impedimentos tecnicos no uso do Databricks.
 
-Atualmente o repositorio contem a documentacao do trabalho e este README explicativo.
+O time de desenvolvimento e formado por Daniel Mussoi Marques, Eduardo Yokomizo, Gustavo Camargo Souza e Gustavo Henrique. O time atua na engenharia de dados, modelagem de Machine Learning e visualizacao.
 
-```text
-.
-+-- 10 - Documentacao do Projeto (1).docx
-+-- README.md
-```
+## Kanban
 
-Em uma evolucao futura, o repositorio pode receber tambem notebooks, bases tratadas, imagens do dashboard e arquivos auxiliares.
+O Kanban foi usado para organizar visualmente o fluxo de desenvolvimento do projeto.
 
-## Possiveis proximas versoes
+O quadro acompanha a evolucao das tarefas tecnicas e de negocio, garantindo entregas incrementais e transparencia em cada etapa.
 
-Algumas melhorias que podem ser feitas em proximas etapas:
+### A fazer
 
-- adicionar notebooks com o pipeline em PySpark;
-- incluir uma amostra de dados anonimizados;
-- publicar imagens do dashboard em Power BI;
-- documentar melhor as metricas do modelo;
-- comparar Isolation Forest com outros algoritmos de deteccao de anomalias;
-- automatizar a execucao com Databricks Workflows;
-- criar um fluxo completo de ingestao, tratamento, modelagem e visualizacao.
+Concentra o planejamento das proximas fases tecnicas, incluindo transformacao de dados, definicao do recorte temporal e escolha dos algoritmos de deteccao de anomalias.
 
-## Conclusao
+Tambem inclui a criacao de indicadores de consumo, alertas automaticos e relatorios finais.
 
-O projeto mostra como Big Data pode ser usado para resolver um problema real do setor eletrico. A deteccao de Perdas Nao Tecnicas nao depende apenas de fiscalizacao em campo, mas tambem de uma boa estrategia de dados.
+### Fazendo
 
-Com uma arquitetura bem organizada, dados tratados e modelos de anomalia, a distribuidora pode direcionar melhor suas equipes, reduzir custos e aumentar a recuperacao de receita.
+Representa as frentes em execucao ativa pelo time.
 
-Mesmo sendo uma proposta academica, o trabalho representa um cenario bem proximo do mercado: transformar dados brutos em informacao util para decisao.
+Segundo o documento, essa etapa envolve integracao das bases de dados, remocao de registros duplicados e calculo da variacao de consumo mensal. Em paralelo, o grupo trabalha na definicao da variavel alvo para o modelo.
+
+### Concluido
+
+Reune os marcos iniciais ja finalizados e validados.
+
+Entre eles estao o planejamento geral do projeto, a selecao dos atributos relevantes e a coleta das bases de dados publicas oficiais da ANEEL.
+
+## DataOps
+
+O DataOps foi desenhado para assegurar governanca e agilidade no ciclo de vida dos dados.
+
+No documento, a estrutura de DataOps aparece organizada nas seguintes etapas:
+
+### Coleta de Dados
+
+Ingestao de dados provenientes de fontes diversificadas, incluindo bancos de dados das distribuidoras de energia, APIs regulatorias, arquivos CSV com historicos de consumo e dados externos socioeconomicos e climaticos por regiao.
+
+### Processamento
+
+Etapa realizada via PySpark para limpeza de registros, remocao de duplicados, tratamento de nulidade, transformacao, normalizacao, criacao de indicadores de consumo, codificacao de variaveis e validacao da integridade estatistica dos dados.
+
+### Armazenamento
+
+O armazenamento e centralizado no ecossistema Databricks, usando uma arquitetura de Data Lakehouse.
+
+Essa arquitetura suporta grandes volumes de dados estruturados e semiestruturados por meio de camadas de processamento escalaveis.
+
+### Analise
+
+A analise envolve a aplicacao de modelos preditivos e algoritmos de deteccao de anomalias, como Isolation Forest.
+
+O objetivo e gerar scores de risco por unidade consumidora e identificar padroes de comportamento de consumo irregular.
+
+### Visualizacao
+
+A visualizacao e feita por dashboards operacionais e de monitoramento no Power BI.
+
+Esses dashboards convertem os resultados das analises em indicadores visuais e mapas de calor para direcionar estrategicamente as equipes de campo.
+
+### Automacao
+
+A automacao aparece na orquestracao de pipelines para execucao periodica e atualizacao automatica das bases de dados.
+
+Essa automacao e integrada aos sistemas de alertas de fraude para operacao em tempo quase real.
+
+### Monitoramento
+
+O monitoramento controla continuamente a saude do pipeline e a acuracia do modelo.
+
+O documento cita metricas de Precision e Recall, logs de execucao do sistema, verificacao de dados faltantes e alertas de inconsistencias no fluxo de dados.
